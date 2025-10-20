@@ -1,0 +1,32 @@
+services:
+  # Caddy como reverse proxy con SSL automático
+  caddy:
+    image: caddy:2.7-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-api.ejemplo.com}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Tu backend FastAPI
+  backend:
+    build: ./backend
+    expose:
+      - "8000"
+    environment:
+      - SECRET_KEY=tu-secret-key-super-segura-para-produccion-2025
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+
+volumes:
+  caddy_data:
+  caddy_config:

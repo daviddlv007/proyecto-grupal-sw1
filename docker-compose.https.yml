@@ -1,0 +1,32 @@
+services:
+  # Nginx como reverse proxy con SSL
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Tu backend (sin exposer puerto público)
+  backend:
+    build: ./backend
+    expose:
+      - "8000"
+    environment:
+      - SECRET_KEY=tu-secret-key-super-segura-para-produccion-2025
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+
+  # Certbot para SSL automático
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./ssl:/etc/letsencrypt
+    command: certonly --webroot --webroot-path=/var/www/certbot --email tu-email@example.com --agree-tos --no-eff-email -d tu-dominio.com
