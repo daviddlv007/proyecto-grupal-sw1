@@ -5,6 +5,15 @@
 *.tfplan
 *.terraform.lock.hcl
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+
 # AWS
 *.pem
 *.key

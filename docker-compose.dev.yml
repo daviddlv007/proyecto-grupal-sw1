@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=development
+      - JWT_SECRET_KEY=dev-secret-key-change-in-production
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRE_HOURS=24
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - api-network
+
+networks:
+  api-network:
+    driver: bridge
+
+# Para desarrollo local:
+# docker-compose -f docker-compose.dev.yml up --build
+#
+# La API estará disponible en:
+# - URL: http://localhost:8000
+# - Docs: http://localhost:8000/docs
+# - Health: http://localhost:8000/health
+#
+# Características del modo desarrollo:
+# - Auto-reload al cambiar código
+# - Volumen montado para desarrollo en tiempo real
+# - Puerto 8000 expuesto directamente (sin proxy)
+# - Variables de entorno para desarrollo
