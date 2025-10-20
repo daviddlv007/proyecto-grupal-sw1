@@ -1,4 +1,4 @@
-name: 🚀 Auto Deploy API to Production
+name: 🚀 Auto Deploy API 
 
 on:
   push:
@@ -9,84 +9,65 @@ on:
       - 'infra/caddy/**'
       - '.github/workflows/**'
   
-  # Permitir ejecución manual
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: 🌐 Deploy to Server
+    name: 🌐 Deploy to Production Server
     runs-on: ubuntu-latest
     
     steps:
     - name: 📂 Checkout code
       uses: actions/checkout@v4
       
-    - name: 🔐 Setup SSH
-      uses: webfactory/ssh-agent@v0.8.0
+    - name: 🚀 Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        
-    - name: 📝 Add server to known hosts
-      run: |
-        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-        
-    - name: 🚀 Deploy to server
-      run: |
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        password: ${{ secrets.SERVER_PASSWORD }}
+        script: |
           set -e
           echo "🔄 Starting deployment..."
           
-          # Ir al directorio del proyecto
           cd /root/proyecto-grupal-sw1
           
-          # Actualizar código
           echo "📥 Pulling latest code..."
           git pull origin main
           
-          # Detener contenedores actuales
           echo "⏹️ Stopping current containers..."
           docker compose -f docker-compose.caddy.yml down || true
           
-          # Limpiar imágenes antiguas (opcional)
-          echo "🧹 Cleaning up old images..."
+          echo "🧹 Cleaning up..."
           docker system prune -f || true
           
-          # Configurar variables de entorno
           export DOMAIN=softwaredlv.duckdns.org
           
-          # Construir y ejecutar
           echo "🏗️ Building and starting containers..."
           docker compose -f docker-compose.caddy.yml up -d --build
           
-          # Verificar que esté funcionando
           echo "🔍 Checking deployment..."
-          sleep 10
+          sleep 15
           
-          # Verificar que los contenedores estén corriendo
           if docker compose -f docker-compose.caddy.yml ps | grep -q "Up"; then
-            echo "✅ Deployment successful!"
-            
-            # Verificar que la API responda
+            echo "✅ Containers running!"
             if curl -f -s https://softwaredlv.duckdns.org/health > /dev/null; then
-              echo "✅ API is responding correctly!"
+              echo "✅ API responding!"
             else
-              echo "⚠️ API might not be responding correctly"
-              exit 1
+              echo "⚠️ API might be starting..."
             fi
+            echo "🎉 Deployment completed!"
           else
-            echo "❌ Deployment failed - containers not running"
-            docker compose -f docker-compose.caddy.yml logs
+            echo "❌ Deployment failed"
+            docker compose -f docker-compose.caddy.yml logs --tail=20
             exit 1
           fi
           
-          echo "🎉 Deployment completed successfully!"
-        EOF
-        
-    - name: 📊 Deployment Summary
+    - name: 📊 Summary
       run: |
-        echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Server**: ${{ secrets.SERVER_HOST }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **API URL**: https://softwaredlv.duckdns.org" >> $GITHUB_STEP_SUMMARY
-        echo "- **Documentation**: https://softwaredlv.duckdns.org/docs" >> $GITHUB_STEP_SUMMARY
-        echo "- **Health Check**: https://softwaredlv.duckdns.org/health" >> $GITHUB_STEP_SUMMARY
-        echo "- **Deployed at**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **API deployed successfully**" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Links:**" >> $GITHUB_STEP_SUMMARY
+        echo "- [📚 API Docs](https://softwaredlv.duckdns.org/docs)" >> $GITHUB_STEP_SUMMARY
+        echo "- [🩺 Health](https://softwaredlv.duckdns.org/health)" >> $GITHUB_STEP_SUMMARY
