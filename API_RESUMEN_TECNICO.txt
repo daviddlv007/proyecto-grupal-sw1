@@ -118,30 +118,7 @@ GET /recompensas/racha
 - Datos se pierden al reiniciar contenedor
 - ⚠️ PARA PRODUCCIÓN: Migrar a PostgreSQL/MongoDB
 
-===============================================================================
-                              ROADMAP DE MEJORAS
-===============================================================================
 
-🎯 PRIORIDAD ALTA (Próximas 2-4 semanas)
------------------------------------------
-1. Base de datos persistente (PostgreSQL)
-2. Integración Whisper para transcripción real
-3. Análisis básico de métricas de audio
-4. Storage para archivos de video (S3/MinIO)
-
-📊 PRIORIDAD MEDIA (1-2 meses)
--------------------------------
-1. Análisis avanzado de video (contacto visual, expresividad)
-2. Generador inteligente de planes de estudio
-3. Sistema de gamificación dinámico
-4. Métricas y analytics avanzados
-
-🚀 PRIORIDAD BAJA (Futuro)
---------------------------
-1. IA para feedback personalizado
-2. Integración con APIs externas de análisis
-3. Sistema de notificaciones
-4. Escalabilidad horizontal
 
 ===============================================================================
                            CÓMO USAR LA API
@@ -161,29 +138,6 @@ Visitar: https://softwaredlv.duckdns.org/docs
 3. Usar token en header: Authorization: Bearer <token>
 4. Probar endpoints protegidos
 
-💻 EJEMPLO FRONTEND
--------------------
-```javascript
-const API_BASE = 'https://softwaredlv.duckdns.org';
-
-// Registro
-const response = await fetch(`${API_BASE}/auth/registrar`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    correo: 'usuario@ejemplo.com',
-    contrasena: 'miPassword123'
-  })
-});
-
-const data = await response.json();
-const token = data.token;
-
-// Usar en otros endpoints
-const userInfo = await fetch(`${API_BASE}/auth/yo`, {
-  headers: { 'Authorization': `Bearer ${token}` }
-});
-```
 
 ===============================================================================
                                 CONTACTO

@@ -1,15 +1,15 @@
 {$DOMAIN} {
-    # Compresión
-    encode zstd gzip
+	# Compresión
+	encode zstd gzip
 
-    # API FastAPI (sin prefijo /api)
-    reverse_proxy backend:8000
+	# API FastAPI (sin prefijo /api)
+	reverse_proxy backend:8000
 
-    # Headers de seguridad
-    header {
-        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
-        X-Content-Type-Options nosniff
-        X-Frame-Options DENY
-        X-XSS-Protection "1; mode=block"
-    }
+	# Headers de seguridad
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		X-XSS-Protection "1; mode=block"
+	}
 }
