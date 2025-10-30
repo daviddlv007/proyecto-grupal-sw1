@@ -67,6 +67,23 @@ class RachaDB(Base):
     racha_actual = Column(Integer, default=0)
     ultima_practica = Column(DateTime)
 
+class PlanDB(Base):
+    __tablename__ = "planes"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
+    objetivos = Column(Text)  # JSON serializado: ["contacto_visual", "expresividad"]
+    tareas = Column(Text)  # JSON serializado: [{"dia": 1, "tarea": "..."}]
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+
+class TareaPlanDB(Base):
+    __tablename__ = "tareas_plan"
+    id = Column(Integer, primary_key=True, index=True)
+    plan_id = Column(Integer, index=True)
+    user_id = Column(Integer, index=True)
+    dia = Column(Integer)
+    completada = Column(Boolean, default=False)
+    fecha_completada = Column(DateTime, nullable=True)
+
 # Crear tablas
 Base.metadata.create_all(bind=engine)
 
@@ -145,9 +162,10 @@ class Practica(BaseModel):
 class TareaDia(BaseModel):
     dia: int
     tarea: str
+    completada: Optional[bool] = False
 
 class Plan(BaseModel):
-    semana: int
+    id: int
     objetivos: List[str]  # Lista de debilidades a mejorar
     tareas: List[TareaDia]  # Tareas específicas por día
     creadoEn: str  # ISO date-time
@@ -186,6 +204,10 @@ class UserLogin(BaseModel):
 class PracticeFinalizar(BaseModel):
     idSesion: str
     urlArchivo: str
+
+class TareaCompletarRequest(BaseModel):
+    planId: int
+    dia: int
 
 # Modelos de respuesta para Swagger
 class AuthResponse(BaseModel):
@@ -1067,13 +1089,7 @@ def _generar_plan_dinamico(debilidades: List[Dict[str, Any]]) -> Plan:
                 tareas_plan.append(TareaDia(dia=dia, tarea=f"🎯 {area.replace('_', ' ').title()}: {ejercicio}"))
                 dia += 1
     
-    # Día 7: Evaluación final y comparación
-    tareas_plan.append(TareaDia(
-        dia=7,
-        tarea="✅ Evaluación final: Graba el mismo video del día 1 y compara tu progreso en las áreas trabajadas"
-    ))
-    
-    # Completar días faltantes si es necesario
+    # Completar días faltantes (del 2 al 6) si es necesario
     ejercicios_generales = [
         "🎤 Practica libre: Graba 3 minutos sobre un tema de tu elección aplicando todo lo aprendido",
         "📚 Lee en voz alta: 5 minutos de un libro o artículo, enfocándote en claridad y expresividad",
@@ -1081,17 +1097,110 @@ def _generar_plan_dinamico(debilidades: List[Dict[str, Any]]) -> Plan:
         "🎬 Análisis: Ve un TED Talk, identifica 3 técnicas del orador e imítalas en un video de 2 minutos"
     ]
     
-    while dia <= 7:
-        import random
+    import random
+    while dia <= 6:
         tarea_general = random.choice(ejercicios_generales)
         tareas_plan.append(TareaDia(dia=dia, tarea=tarea_general))
         dia += 1
     
+    # Día 7: Evaluación final y comparación (siempre al final)
+    tareas_plan.append(TareaDia(
+        dia=7,
+        tarea="✅ Evaluación final: Graba el mismo video del día 1 y compara tu progreso en las áreas trabajadas"
+    ))
+    
+    return {
+        "objetivos": objetivos_nombres[:3],
+        "tareas": tareas_plan
+    }
+
+def _generar_o_recuperar_plan(user_id: int, db: Session) -> Plan:
+    """
+    Genera un nuevo plan semanal si no existe uno para la semana actual.
+    Si ya existe un plan de la semana actual (últimos 7 días), lo devuelve.
+    """
+    # Buscar el último plan del usuario
+    ultimo_plan = db.query(PlanDB).filter(
+        PlanDB.user_id == user_id
+    ).order_by(PlanDB.fecha_creacion.desc()).first()
+    
+    # Verificar si el plan es de la semana actual (últimos 7 días)
+    if ultimo_plan:
+        dias_desde_creacion = (datetime.utcnow() - ultimo_plan.fecha_creacion).days
+        if dias_desde_creacion < 7:
+            # El plan aún es válido, devolverlo con el estado de las tareas
+            objetivos = json.loads(ultimo_plan.objetivos)
+            tareas_json = json.loads(ultimo_plan.tareas)
+            
+            # Verificar si hay días duplicados (bug de versiones anteriores)
+            dias_usados = set()
+            tiene_duplicados = False
+            for tarea_data in tareas_json:
+                if tarea_data["dia"] in dias_usados:
+                    tiene_duplicados = True
+                    break
+                dias_usados.add(tarea_data["dia"])
+            
+            # Si hay duplicados, invalidar este plan y generar uno nuevo
+            if tiene_duplicados:
+                # Marcar como inválido eliminándolo o simplemente no usándolo
+                pass  # Continuar para generar uno nuevo
+            else:
+                # Obtener el estado de cada tarea
+                tareas_con_estado = []
+                for tarea_data in tareas_json:
+                    tarea_estado = db.query(TareaPlanDB).filter(
+                        TareaPlanDB.plan_id == ultimo_plan.id,
+                        TareaPlanDB.dia == tarea_data["dia"]
+                    ).first()
+                    
+                    tareas_con_estado.append(TareaDia(
+                        dia=tarea_data["dia"],
+                        tarea=tarea_data["tarea"],
+                        completada=tarea_estado.completada if tarea_estado else False
+                    ))
+                
+                return Plan(
+                    id=ultimo_plan.id,
+                    objetivos=objetivos,
+                    tareas=tareas_con_estado,
+                    creadoEn=ultimo_plan.fecha_creacion.isoformat()
+                )
+    
+    # No hay plan válido, generar uno nuevo
+    debilidades = _identificar_debilidades(user_id, db)
+    plan_data = _generar_plan_dinamico(debilidades)
+    
+    # Guardar el plan en la base de datos
+    nuevo_plan_db = PlanDB(
+        user_id=user_id,
+        objetivos=json.dumps(plan_data["objetivos"]),
+        tareas=json.dumps([{"dia": t.dia, "tarea": t.tarea} for t in plan_data["tareas"]]),
+        fecha_creacion=datetime.utcnow()
+    )
+    db.add(nuevo_plan_db)
+    db.commit()
+    db.refresh(nuevo_plan_db)
+    
+    # Crear registros de tareas para el tracking
+    for tarea in plan_data["tareas"]:
+        tarea_db = TareaPlanDB(
+            plan_id=nuevo_plan_db.id,
+            user_id=user_id,
+            dia=tarea.dia,
+            completada=False
+        )
+        db.add(tarea_db)
+    db.commit()
+    
+    # Preparar tareas con estado
+    tareas_con_estado = [TareaDia(dia=t.dia, tarea=t.tarea, completada=False) for t in plan_data["tareas"]]
+    
     return Plan(
-        semana=1,
-        objetivos=objetivos_nombres[:3],
-        tareas=tareas_plan,
-        creadoEn=datetime.utcnow().isoformat()
+        id=nuevo_plan_db.id,
+        objetivos=plan_data["objetivos"],
+        tareas=tareas_con_estado,
+        creadoEn=nuevo_plan_db.fecha_creacion.isoformat()
     )
 
 # Endpoints adicionales
@@ -1100,10 +1209,90 @@ async def plan_actual(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Plan:
-    """Genera un plan personalizado basado en las debilidades detectadas"""
-    debilidades = _identificar_debilidades(current_user.id, db)
-    plan = _generar_plan_dinamico(debilidades)
-    return plan
+    """
+    Obtiene el plan semanal actual del usuario.
+    Si no existe un plan válido (de los últimos 7 días), genera uno nuevo automáticamente.
+    """
+    return _generar_o_recuperar_plan(current_user.id, db)
+
+@app.get("/plan/historial", response_model=List[Plan])
+async def plan_historial(
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> List[Plan]:
+    """
+    Obtiene el historial completo de planes generados para el usuario.
+    """
+    planes_db = db.query(PlanDB).filter(
+        PlanDB.user_id == current_user.id
+    ).order_by(PlanDB.fecha_creacion.desc()).all()
+    
+    planes = []
+    for plan_db in planes_db:
+        objetivos = json.loads(plan_db.objetivos)
+        tareas_json = json.loads(plan_db.tareas)
+        
+        # Obtener el estado de cada tarea
+        tareas_con_estado = []
+        for tarea_data in tareas_json:
+            tarea_estado = db.query(TareaPlanDB).filter(
+                TareaPlanDB.plan_id == plan_db.id,
+                TareaPlanDB.dia == tarea_data["dia"]
+            ).first()
+            
+            tareas_con_estado.append(TareaDia(
+                dia=tarea_data["dia"],
+                tarea=tarea_data["tarea"],
+                completada=tarea_estado.completada if tarea_estado else False
+            ))
+        
+        planes.append(Plan(
+            id=plan_db.id,
+            objetivos=objetivos,
+            tareas=tareas_con_estado,
+            creadoEn=plan_db.fecha_creacion.isoformat()
+        ))
+    
+    return planes
+
+@app.post("/plan/tarea/completar")
+async def completar_tarea(
+    data: TareaCompletarRequest,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Marca una tarea específica del plan como completada.
+    """
+    # Verificar que el plan pertenece al usuario
+    plan = db.query(PlanDB).filter(
+        PlanDB.id == data.planId,
+        PlanDB.user_id == current_user.id
+    ).first()
+    
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+    
+    # Buscar la tarea
+    tarea = db.query(TareaPlanDB).filter(
+        TareaPlanDB.plan_id == data.planId,
+        TareaPlanDB.dia == data.dia
+    ).first()
+    
+    if not tarea:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    
+    # Marcar como completada
+    tarea.completada = True
+    tarea.fecha_completada = datetime.utcnow()
+    db.commit()
+    
+    return {
+        "mensaje": "Tarea marcada como completada",
+        "planId": data.planId,
+        "dia": data.dia,
+        "completada": True
+    }
 
 @app.get("/progreso/resumen", response_model=Progreso)
 async def progreso_resumen(

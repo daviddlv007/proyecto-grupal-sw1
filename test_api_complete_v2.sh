@@ -21,10 +21,10 @@ VIDEO_MALO="https://bwduexqzhjolwfxupvco.supabase.co/storage/v1/object/public/im
 
 # Seleccionar ambiente (EDITABLE)
 # OPCIÓN 1: Desarrollo local
-# BASE_URL="http://localhost:8000"
+BASE_URL="http://localhost:8000"
 
 # OPCIÓN 2: Producción
-BASE_URL="https://softwaredlv.duckdns.org"
+# BASE_URL="https://softwaredlv.duckdns.org"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -253,11 +253,79 @@ fi
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════
-# FASE 5: GAMIFICACIÓN Y RECOMPENSAS
+# FASE 5: GESTIÓN DE TAREAS DEL PLAN
 # ═══════════════════════════════════════════════════════════════════════════
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║ FASE 5: GAMIFICACIÓN Y RECOMPENSAS${NC}"
+echo -e "${BLUE}║ FASE 5: GESTIÓN DE TAREAS DEL PLAN${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+echo -e "${GREEN}📋 Escenario: Usuario marca tareas como completadas${NC}"
+echo ""
+
+# Obtener el ID del plan actual
+echo -e "${BLUE}1️⃣3️⃣  Obteniendo ID del plan actual${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    PLAN_ID=$(curl -s $BASE_URL/plan/actual -H "$AUTH_HEADER" | python3 -c "import sys, json; print(json.load(sys.stdin).get('id', 0))" 2>/dev/null)
+else
+    PLAN_ID=$(curl -s $BASE_URL/plan/actual | python3 -c "import sys, json; print(json.load(sys.stdin).get('id', 0))" 2>/dev/null)
+fi
+echo -e "${GREEN}✅ Plan ID: $PLAN_ID${NC}"
+echo ""
+
+# Marcar día 1 como completado
+echo -e "${BLUE}1️⃣4️⃣  Marcando tarea del día 1 como completada${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    curl -s -X POST $BASE_URL/plan/tarea/completar \
+      -H "Content-Type: application/json" \
+      -H "$AUTH_HEADER" \
+      -d "{\"planId\": $PLAN_ID, \"dia\": 1}" | python3 -m json.tool
+else
+    curl -s -X POST $BASE_URL/plan/tarea/completar \
+      -H "Content-Type: application/json" \
+      -d "{\"planId\": $PLAN_ID, \"dia\": 1}" | python3 -m json.tool
+fi
+echo ""
+
+# Marcar día 2 como completado
+echo -e "${BLUE}1️⃣5️⃣  Marcando tarea del día 2 como completada${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    curl -s -X POST $BASE_URL/plan/tarea/completar \
+      -H "Content-Type: application/json" \
+      -H "$AUTH_HEADER" \
+      -d "{\"planId\": $PLAN_ID, \"dia\": 2}" | python3 -m json.tool
+else
+    curl -s -X POST $BASE_URL/plan/tarea/completar \
+      -H "Content-Type: application/json" \
+      -d "{\"planId\": $PLAN_ID, \"dia\": 2}" | python3 -m json.tool
+fi
+echo ""
+
+# Verificar estado actualizado del plan
+echo -e "${BLUE}1️⃣6️⃣  Verificando plan con tareas actualizadas${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    curl -s $BASE_URL/plan/actual -H "$AUTH_HEADER" | python3 -m json.tool | head -60
+else
+    curl -s $BASE_URL/plan/actual | python3 -m json.tool | head -60
+fi
+echo ""
+
+# Historial de planes
+echo -e "${BLUE}1️⃣7️⃣  Consultando historial completo de planes${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    curl -s $BASE_URL/plan/historial -H "$AUTH_HEADER" | python3 -m json.tool | head -40
+else
+    curl -s $BASE_URL/plan/historial | python3 -m json.tool | head -40
+fi
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FASE 6: GAMIFICACIÓN Y RECOMPENSAS
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║ FASE 6: GAMIFICACIÓN Y RECOMPENSAS${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -265,7 +333,7 @@ echo -e "${GREEN}🏆 Escenario: Sistema otorga insignias y rachas${NC}"
 echo ""
 
 # Insignias obtenidas
-echo -e "${BLUE}1️⃣3️⃣  Insignias desbloqueadas${NC}"
+echo -e "${BLUE}1️⃣8️⃣  Insignias desbloqueadas${NC}"
 if [ -n "$AUTH_HEADER" ]; then
     curl -s $BASE_URL/recompensas/insignias -H "$AUTH_HEADER" | python3 -m json.tool | head -40
 else
@@ -274,7 +342,7 @@ fi
 echo ""
 
 # Racha actual
-echo -e "${BLUE}1️⃣4️⃣  Racha de días consecutivos${NC}"
+echo -e "${BLUE}1️⃣9️⃣  Racha de días consecutivos${NC}"
 if [ -n "$AUTH_HEADER" ]; then
     curl -s $BASE_URL/recompensas/racha -H "$AUTH_HEADER" | python3 -m json.tool
 else
@@ -283,15 +351,15 @@ fi
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════
-# FASE 6: LIMPIEZA OPCIONAL
+# FASE 7: LIMPIEZA OPCIONAL
 # ═══════════════════════════════════════════════════════════════════════════
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║ FASE 6: LIMPIEZA FINAL (OPCIONAL)${NC}"
+echo -e "${BLUE}║ FASE 7: LIMPIEZA FINAL (OPCIONAL)${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-echo -e "${YELLOW}1️⃣5️⃣  ¿Deseas limpiar la base de datos? (s/n)${NC}"
+echo -e "${YELLOW}2️⃣0️⃣  ¿Deseas limpiar la base de datos? (s/n)${NC}"
 read -p "Respuesta: " LIMPIAR
 
 if [ "$LIMPIAR" = "s" ] || [ "$LIMPIAR" = "S" ]; then
@@ -324,6 +392,9 @@ echo "║  ✓ Dos sesiones de práctica (buena y mala)                         
 echo "║  ✓ Análisis detallado de audio/video                                    ║"
 echo "║  ✓ Comparativa de progreso                                              ║"
 echo "║  ✓ Plan personalizado basado en debilidades                             ║"
+echo "║  ✓ Persistencia de planes en BD                                         ║"
+echo "║  ✓ Gestión de estado de tareas del plan                                 ║"
+echo "║  ✓ Historial de planes generados                                        ║"
 echo "║  ✓ Insignias dinámicas                                                  ║"
 echo "║  ✓ Racha de usuarios                                                    ║"
 echo "║  ✓ Limpieza de BD                                                       ║"
