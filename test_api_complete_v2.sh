@@ -54,7 +54,7 @@ if [[ $BASE_URL == *"https"* ]]; then
     TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" \
         -H "Content-Type: application/json" \
         -d "{\"correo\": \"${RANDOM_USER}@test.com\", \"contrasena\": \"test123\"}" | \
-        python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('access_token', ''))")
+        python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('token', data.get('access_token', '')))")
     
     if [ -z "$TOKEN" ]; then
         echo -e "${RED}❌ Error obteniendo token. Abortando.${NC}"
