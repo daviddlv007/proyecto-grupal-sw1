@@ -1,7 +1,6 @@
 # 🎤 API Práctica Oral# 🎤 API Práctica Oral
 
 
-
 Sistema de análisis y entrenamiento de oratoria con IA. Procesa videos, extrae métricas de audio/video con MediaPipe, genera planes personalizados y gamificación con insignias.Sistema de análisis y entrenamiento de oratoria con IA. Procesa videos, extrae métricas de audio/video con MediaPipe, genera planes personalizados y gamificación con insignias.
 
 
