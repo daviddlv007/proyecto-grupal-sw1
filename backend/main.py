@@ -464,13 +464,28 @@ async def finalizar_practica(
         orientacion = "estable" if mov_cabeza < 0.02 else "inestable"
         
         # Clasificar postura
+        # NOTA: Umbrales calibrados para videos móviles (verticales)
+        # Videos móviles tienen valores ~20-40x más altos que videos de escritorio
+        # debido a diferencias en encuadre y orientación de cámara
         alineacion = video_data.get("alineacion_hombros_promedio", 0)
-        if alineacion < 0.015:
-            postura = "buena"
-        elif alineacion < 0.03:
-            postura = "regular"
+        
+        # Detectar si es video móvil (valores altos de alineación)
+        if alineacion > 0.1:
+            # Umbrales para videos móviles (vertical)
+            if alineacion < 0.68:
+                postura = "buena"       # < 0.68: Postura recta y alineada
+            elif alineacion < 0.75:
+                postura = "regular"     # 0.68-0.75: Postura aceptable
+            else:
+                postura = "mala"        # >= 0.75: Postura desalineada
         else:
-            postura = "mala"
+            # Umbrales para videos de escritorio (horizontal) - legacy
+            if alineacion < 0.015:
+                postura = "buena"
+            elif alineacion < 0.03:
+                postura = "regular"
+            else:
+                postura = "mala"
         
         # Clasificar calidad de video/audio (simplificado)
         calidad_video = "buena" if video_data.get("frames_con_cara", 0) > 0 else "mala"

@@ -332,7 +332,7 @@ class VideoAnalyzer:
             logger.info(f"  - Expresividad: {expressiveness_score:.2f} ({expressiveness_level})")
             logger.info(f"  - Confianza: {confidence_score:.2f} ({confidence_level})")
             logger.info(f"  - Manos visibles: {hands_percentage:.1f}%")
-            logger.info(f"  - Alineación hombros: {avg_shoulder_alignment:.3f}")
+            logger.info(f"  - Alineación hombros: {avg_shoulder_alignment:.4f}")
             
             return {
                 # Contacto visual
