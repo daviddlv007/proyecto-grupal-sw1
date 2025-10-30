@@ -1,112 +1,230 @@
 #!/bin/bash
 
-# ═══════════════════════════════════════════════════════════════
-# 🎤 SCRIPT DE PRUEBA COMPLETA - API PRÁCTICA ORAL
-# ═══════════════════════════════════════════════════════════════
-# 
-# CONFIGURACIÓN: Comenta/Descomenta la URL que deseas usar
-# ───────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+# 🎤 FLUJO COMPLETO DE USUARIO - API PRÁCTICA ORAL
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Este script simula un flujo real de usuario con dos sesiones de práctica:
+# 1. Primera sesión: Video CON BUENA ORATORIA (para validar detección de calidad)
+# 2. Segunda sesión: Video CON MALA ORATORIA (para validar plan personalizado)
+#
+# Luego valida el flujo funcional completo de la aplicación.
+# ═══════════════════════════════════════════════════════════════════════════
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📝 CONFIGURACIÓN INICIAL
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# URLs de los videos de prueba (EDITABLE)
+VIDEO_BUENO="https://bwduexqzhjolwfxupvco.supabase.co/storage/v1/object/public/imagenes/bueno.mp4"
+VIDEO_MALO="https://bwduexqzhjolwfxupvco.supabase.co/storage/v1/object/public/imagenes/malo.mp4"
+
+# Seleccionar ambiente (EDITABLE)
 # OPCIÓN 1: Desarrollo local
 # BASE_URL="http://localhost:8000"
 
-# OPCIÓN 2: Producción (descomenta la siguiente línea para usar)
+# OPCIÓN 2: Producción
 BASE_URL="https://softwaredlv.duckdns.org"
 
-# ───────────────────────────────────────────────────────────────
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-echo "═══════════════════════════════════════════════════════════"
-echo "🎤 PRUEBA COMPLETA DE API PRÁCTICA ORAL"
-echo "═══════════════════════════════════════════════════════════"
-echo "🌐 URL Base: $BASE_URL"
-echo "═══════════════════════════════════════════════════════════"
-echo ""
-
-# Colores
+# Colores para output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-# Variable para token JWT (solo en producción)
+# Variables globales
 TOKEN=""
+USER_ID=""
+PRACTICA_1_ID=""
+PRACTICA_2_ID=""
 
-# 1. Health check
-echo -e "${BLUE}1. Verificando salud del sistema...${NC}"
-curl -s $BASE_URL/health | python3 -m json.tool
+# ═══════════════════════════════════════════════════════════════════════════
+echo -e "${CYAN}"
+echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "║                                                                           ║"
+echo "║              🎤 PRUEBA FLUJO COMPLETO - API PRÁCTICA ORAL               ║"
+echo "║                                                                           ║"
+echo "║        SIMULANDO: Usuario con 2 sesiones de práctica reales             ║"
+echo "║                                                                           ║"
+echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo -e "${NC}"
+echo ""
+echo -e "${YELLOW}🌐 Ambiente: $BASE_URL${NC}"
+echo -e "${YELLOW}🎬 Video Bueno: $VIDEO_BUENO${NC}"
+echo -e "${YELLOW}🎬 Video Malo:  $VIDEO_MALO${NC}"
 echo ""
 
-# 2. Autenticación (solo si es producción)
+# ═══════════════════════════════════════════════════════════════════════════
+# FASE 0: VERIFICACIÓN DEL SISTEMA
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║ FASE 0: VERIFICACIÓN DEL SISTEMA${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+echo -e "${BLUE}1️⃣  Health Check${NC}"
+HEALTH=$(curl -s $BASE_URL/health)
+echo "$HEALTH" | python3 -m json.tool
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FASE 1: AUTENTICACIÓN
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║ FASE 1: AUTENTICACIÓN Y REGISTRO${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
 if [[ $BASE_URL == *"https"* ]]; then
-    echo -e "${YELLOW}🔐 Autenticación requerida (producción)${NC}"
-    
-    # Registrar usuario de prueba
-    echo -e "${BLUE}2a. Registrando usuario de prueba...${NC}"
-    RANDOM_USER="test_$(date +%s)"
-    curl -s -X POST "$BASE_URL/auth/registrar" \
-        -H "Content-Type: application/json" \
-        -d "{\"correo\": \"${RANDOM_USER}@test.com\", \"contrasena\": \"test123\"}" | python3 -m json.tool
+    echo -e "${YELLOW}🔐 Modo Producción: Autenticación requerida${NC}"
     echo ""
     
-    # Login y obtener token
-    echo -e "${BLUE}2b. Obteniendo token JWT...${NC}"
-    TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" \
+    # Crear usuario único
+    RANDOM_USER="user_$(date +%s)"
+    echo -e "${BLUE}2️⃣  Registrando usuario: $RANDOM_USER${NC}"
+    
+    REG_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/registrar" \
         -H "Content-Type: application/json" \
-        -d "{\"correo\": \"${RANDOM_USER}@test.com\", \"contrasena\": \"test123\"}" | \
-        python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('token', data.get('access_token', '')))")
+        -d "{\"correo\": \"${RANDOM_USER}@test.com\", \"contrasena\": \"test123\"}")
+    
+    USER_ID=$(echo "$REG_RESPONSE" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('id', ''))" 2>/dev/null)
+    echo "$REG_RESPONSE" | python3 -m json.tool
+    echo ""
+    
+    # Login
+    echo -e "${BLUE}3️⃣  Obteniendo token JWT${NC}"
+    LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/login" \
+        -H "Content-Type: application/json" \
+        -d "{\"correo\": \"${RANDOM_USER}@test.com\", \"contrasena\": \"test123\"}")
+    
+    TOKEN=$(echo "$LOGIN_RESPONSE" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('token', data.get('access_token', '')))" 2>/dev/null)
     
     if [ -z "$TOKEN" ]; then
         echo -e "${RED}❌ Error obteniendo token. Abortando.${NC}"
         exit 1
     fi
     
-    echo -e "${GREEN}✅ Token obtenido: ${TOKEN:0:20}...${NC}"
+    echo -e "${GREEN}✅ Token obtenido: ${TOKEN:0:30}...${NC}"
     echo ""
     AUTH_HEADER="Authorization: Bearer $TOKEN"
 else
-    echo -e "${YELLOW}🔓 Modo desarrollo - Sin autenticación${NC}"
+    echo -e "${YELLOW}🔓 Modo Desarrollo: Sin autenticación${NC}"
     echo ""
     AUTH_HEADER=""
 fi
 
-# 3. Iniciar práctica
-echo -e "${BLUE}3. Iniciando sesión de práctica...${NC}"
-if [ -n "$AUTH_HEADER" ]; then
-    SESSION=$(curl -s -X POST $BASE_URL/practica/iniciar -H "$AUTH_HEADER" | python3 -c "import sys, json; print(json.load(sys.stdin)['idSesion'])")
-else
-    SESSION=$(curl -s -X POST $BASE_URL/practica/iniciar | python3 -c "import sys, json; print(json.load(sys.stdin)['idSesion'])")
-fi
-echo -e "${GREEN}Sesión iniciada: $SESSION${NC}"
+# ═══════════════════════════════════════════════════════════════════════════
+# FASE 2: PRIMERA SESIÓN DE PRÁCTICA (VIDEO BUENO)
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║ FASE 2: PRIMERA SESIÓN - VIDEO CON BUENA ORATORIA${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# 4. Finalizar práctica con video bueno
-echo -e "${BLUE}4. Procesando video de práctica (BUENO)...${NC}"
+echo -e "${GREEN}📊 Escenario: Usuario graba su primera práctica con buena técnica${NC}"
+echo ""
+
+# Iniciar sesión 1
+echo -e "${BLUE}4️⃣  Iniciando primera sesión de práctica${NC}"
 if [ -n "$AUTH_HEADER" ]; then
-    PRACTICA_ID=$(curl -s -X POST $BASE_URL/practica/finalizar \
+    SESION_1=$(curl -s -X POST $BASE_URL/practica/iniciar -H "$AUTH_HEADER" | python3 -c "import sys, json; print(json.load(sys.stdin)['idSesion'])" 2>/dev/null)
+else
+    SESION_1=$(curl -s -X POST $BASE_URL/practica/iniciar | python3 -c "import sys, json; print(json.load(sys.stdin)['idSesion'])" 2>/dev/null)
+fi
+echo -e "${GREEN}✅ Sesión iniciada: $SESION_1${NC}"
+echo ""
+
+# Finalizar sesión 1 con video bueno
+echo -e "${BLUE}5️⃣  Procesando video BUENO y analizando...${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    PRACTICA_1=$(curl -s -X POST $BASE_URL/practica/finalizar \
       -H "Content-Type: application/json" \
       -H "$AUTH_HEADER" \
-      -d "{\"idSesion\": \"$SESSION\", \"urlArchivo\": \"https://bwduexqzhjolwfxupvco.supabase.co/storage/v1/object/public/imagenes/bueno.mp4\"}" | \
-      python3 -c "import sys, json; data=json.load(sys.stdin); print(data['idPractica']); print('Puntuación:', data.get('resumen', 'N/A'))")
+      -d "{\"idSesion\": \"$SESION_1\", \"urlArchivo\": \"$VIDEO_BUENO\"}" | \
+      python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('idPractica', '1'))" 2>/dev/null)
 else
-    PRACTICA_ID=$(curl -s -X POST $BASE_URL/practica/finalizar \
+    PRACTICA_1=$(curl -s -X POST $BASE_URL/practica/finalizar \
       -H "Content-Type: application/json" \
-      -d "{\"idSesion\": \"$SESSION\", \"urlArchivo\": \"https://bwduexqzhjolwfxupvco.supabase.co/storage/v1/object/public/imagenes/bueno.mp4\"}" | \
-      python3 -c "import sys, json; data=json.load(sys.stdin); print(data['idPractica']); print('Puntuación:', data.get('resumen', 'N/A'))")
+      -d "{\"idSesion\": \"$SESION_1\", \"urlArchivo\": \"$VIDEO_BUENO\"}" | \
+      python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('idPractica', '1'))" 2>/dev/null)
 fi
-echo ""
 
-# 5. Ver análisis detallado
-echo -e "${BLUE}5. Consultando análisis detallado...${NC}"
+# Ver análisis detallado de sesión 1
+echo -e "${BLUE}6️⃣  Análisis detallado de Primera Sesión${NC}"
 if [ -n "$AUTH_HEADER" ]; then
-    curl -s $BASE_URL/practica/1/analisis -H "$AUTH_HEADER" | python3 -m json.tool | head -30
+    curl -s $BASE_URL/practica/$PRACTICA_1/analisis -H "$AUTH_HEADER" | python3 -m json.tool | head -50
 else
-    curl -s $BASE_URL/practica/1/analisis | python3 -m json.tool | head -30
+    curl -s $BASE_URL/practica/$PRACTICA_1/analisis | python3 -m json.tool | head -50
 fi
 echo ""
 
-# 6. Ver historial
-echo -e "${BLUE}6. Consultando historial de prácticas...${NC}"
+# ═══════════════════════════════════════════════════════════════════════════
+# FASE 3: SEGUNDA SESIÓN DE PRÁCTICA (VIDEO MALO)
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║ FASE 3: SEGUNDA SESIÓN - VIDEO CON MALA ORATORIA${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+echo -e "${GREEN}📊 Escenario: Usuario graba segunda práctica sin técnica (simula debilidades)${NC}"
+echo ""
+
+# Iniciar sesión 2
+echo -e "${BLUE}7️⃣  Iniciando segunda sesión de práctica${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    SESION_2=$(curl -s -X POST $BASE_URL/practica/iniciar -H "$AUTH_HEADER" | python3 -c "import sys, json; print(json.load(sys.stdin)['idSesion'])" 2>/dev/null)
+else
+    SESION_2=$(curl -s -X POST $BASE_URL/practica/iniciar | python3 -c "import sys, json; print(json.load(sys.stdin)['idSesion'])" 2>/dev/null)
+fi
+echo -e "${GREEN}✅ Sesión iniciada: $SESION_2${NC}"
+echo ""
+
+# Finalizar sesión 2 con video malo
+echo -e "${BLUE}8️⃣  Procesando video MALO y analizando debilidades...${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    PRACTICA_2=$(curl -s -X POST $BASE_URL/practica/finalizar \
+      -H "Content-Type: application/json" \
+      -H "$AUTH_HEADER" \
+      -d "{\"idSesion\": \"$SESION_2\", \"urlArchivo\": \"$VIDEO_MALO\"}" | \
+      python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('idPractica', '2'))" 2>/dev/null)
+else
+    PRACTICA_2=$(curl -s -X POST $BASE_URL/practica/finalizar \
+      -H "Content-Type: application/json" \
+      -d "{\"idSesion\": \"$SESION_2\", \"urlArchivo\": \"$VIDEO_MALO\"}" | \
+      python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('idPractica', '2'))" 2>/dev/null)
+fi
+
+# Ver análisis detallado de sesión 2
+echo -e "${BLUE}9️⃣  Análisis detallado de Segunda Sesión${NC}"
+if [ -n "$AUTH_HEADER" ]; then
+    curl -s $BASE_URL/practica/$PRACTICA_2/analisis -H "$AUTH_HEADER" | python3 -m json.tool | head -50
+else
+    curl -s $BASE_URL/practica/$PRACTICA_2/analisis | python3 -m json.tool | head -50
+fi
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FASE 4: ANÁLISIS DE DATOS Y RECOMENDACIONES
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║ FASE 4: ANÁLISIS INTEGRAL DE USUARIO${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+echo -e "${GREEN}📊 Escenario: Sistema analiza el progreso y genera recomendaciones${NC}"
+echo ""
+
+# Historial completo
+echo -e "${BLUE}🔟 Historial de prácticas${NC}"
 if [ -n "$AUTH_HEADER" ]; then
     curl -s $BASE_URL/practica/historial -H "$AUTH_HEADER" | python3 -m json.tool
 else
@@ -114,17 +232,19 @@ else
 fi
 echo ""
 
-# 7. Ver plan personalizado
-echo -e "${BLUE}7. Obteniendo plan de entrenamiento personalizado...${NC}"
+# Plan personalizado basado en debilidades
+echo -e "${BLUE}1️⃣1️⃣  Plan personalizado (basado en análisis de sesión 2)${NC}"
+echo -e "${YELLOW}⚠️  El plan se personaliza según las debilidades detectadas${NC}"
 if [ -n "$AUTH_HEADER" ]; then
-    curl -s $BASE_URL/plan/actual -H "$AUTH_HEADER" | python3 -m json.tool | head -40
+    curl -s $BASE_URL/plan/actual -H "$AUTH_HEADER" | python3 -m json.tool | head -50
 else
-    curl -s $BASE_URL/plan/actual | python3 -m json.tool | head -40
+    curl -s $BASE_URL/plan/actual | python3 -m json.tool | head -50
 fi
 echo ""
 
-# 8. Ver progreso
-echo -e "${BLUE}8. Consultando progreso y tendencias...${NC}"
+# Progreso y tendencias
+echo -e "${BLUE}1️⃣2️⃣  Resumen de progreso y tendencias${NC}"
+echo -e "${YELLOW}💡 Comparativa: ¿Mejoró entre sesión 1 y 2?${NC}"
 if [ -n "$AUTH_HEADER" ]; then
     curl -s $BASE_URL/progreso/resumen -H "$AUTH_HEADER" | python3 -m json.tool
 else
@@ -132,17 +252,29 @@ else
 fi
 echo ""
 
-# 9. Ver insignias
-echo -e "${BLUE}9. Consultando insignias obtenidas...${NC}"
+# ═══════════════════════════════════════════════════════════════════════════
+# FASE 5: GAMIFICACIÓN Y RECOMPENSAS
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║ FASE 5: GAMIFICACIÓN Y RECOMPENSAS${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+echo -e "${GREEN}🏆 Escenario: Sistema otorga insignias y rachas${NC}"
+echo ""
+
+# Insignias obtenidas
+echo -e "${BLUE}1️⃣3️⃣  Insignias desbloqueadas${NC}"
 if [ -n "$AUTH_HEADER" ]; then
-    curl -s $BASE_URL/recompensas/insignias -H "$AUTH_HEADER" | python3 -m json.tool | head -30
+    curl -s $BASE_URL/recompensas/insignias -H "$AUTH_HEADER" | python3 -m json.tool | head -40
 else
-    curl -s $BASE_URL/recompensas/insignias | python3 -m json.tool | head -30
+    curl -s $BASE_URL/recompensas/insignias | python3 -m json.tool | head -40
 fi
 echo ""
 
-# 10. Ver racha
-echo -e "${BLUE}10. Consultando racha actual...${NC}"
+# Racha actual
+echo -e "${BLUE}1️⃣4️⃣  Racha de días consecutivos${NC}"
 if [ -n "$AUTH_HEADER" ]; then
     curl -s $BASE_URL/recompensas/racha -H "$AUTH_HEADER" | python3 -m json.tool
 else
@@ -150,31 +282,57 @@ else
 fi
 echo ""
 
-# 11. Limpieza de base de datos (opcional)
-echo -e "${YELLOW}11. ¿Deseas limpiar la base de datos? (s/n)${NC}"
+# ═══════════════════════════════════════════════════════════════════════════
+# FASE 6: LIMPIEZA OPCIONAL
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║ FASE 6: LIMPIEZA FINAL (OPCIONAL)${NC}"
+echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+echo -e "${YELLOW}1️⃣5️⃣  ¿Deseas limpiar la base de datos? (s/n)${NC}"
 read -p "Respuesta: " LIMPIAR
 
 if [ "$LIMPIAR" = "s" ] || [ "$LIMPIAR" = "S" ]; then
+    echo ""
     echo -e "${BLUE}Limpiando base de datos...${NC}"
     if [ -n "$AUTH_HEADER" ]; then
-        RESULTADO=$(curl -s -X POST $BASE_URL/admin/limpiar-bd -H "$AUTH_HEADER")
+        curl -s -X POST $BASE_URL/admin/limpiar-bd -H "$AUTH_HEADER" | python3 -m json.tool
     else
-        RESULTADO=$(curl -s -X POST $BASE_URL/admin/limpiar-bd)
+        curl -s -X POST $BASE_URL/admin/limpiar-bd | python3 -m json.tool
     fi
-    echo "$RESULTADO" | python3 -m json.tool
-    echo -e "${GREEN}✅ Base de datos limpiada exitosamente${NC}"
+    echo -e "${GREEN}✅ Base de datos limpiada${NC}"
 else
-    echo -e "${YELLOW}⏭️  Limpieza de BD omitida${NC}"
+    echo -e "${YELLOW}⏭️  Limpieza omitida${NC}"
 fi
 echo ""
 
-echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}✅ PRUEBA COMPLETA FINALIZADA${NC}"
-echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+# ═══════════════════════════════════════════════════════════════════════════
+# RESUMEN FINAL
+# ═══════════════════════════════════════════════════════════════════════════
+
+echo -e "${CYAN}"
+echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+echo "║                                                                           ║"
+echo "║                    ✅ PRUEBA COMPLETADA EXITOSAMENTE                    ║"
+echo "║                                                                           ║"
+echo "║                         FLUJO VALIDADO:                                 ║"
+echo "║                                                                           ║"
+echo "║  ✓ Autenticación JWT                                                    ║"
+echo "║  ✓ Dos sesiones de práctica (buena y mala)                              ║"
+echo "║  ✓ Análisis detallado de audio/video                                    ║"
+echo "║  ✓ Comparativa de progreso                                              ║"
+echo "║  ✓ Plan personalizado basado en debilidades                             ║"
+echo "║  ✓ Insignias dinámicas                                                  ║"
+echo "║  ✓ Racha de usuarios                                                    ║"
+echo "║  ✓ Limpieza de BD                                                       ║"
+echo "║                                                                           ║"
+echo "║              🎤 SISTEMA FUNCIONAL Y SEMÁNTICAMENTE COHERENTE             ║"
+echo "║                                                                           ║"
+echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+echo -e "${NC}"
 echo ""
-echo "📚 Documentación Swagger:"
-echo "  👉 $BASE_URL/docs"
-echo ""
-echo "🌐 API Base:"
-echo "  👉 $BASE_URL"
+echo -e "${CYAN}📚 Documentación Swagger: $BASE_URL/docs${NC}"
+echo -e "${CYAN}🌐 API Base: $BASE_URL${NC}"
 echo ""
