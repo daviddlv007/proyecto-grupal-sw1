@@ -110,29 +110,41 @@ El script incluye limpieza de BD al final (opcional).
 
 | Método | Endpoint | Descripción |
 
-|--------|----------|-------------|### 📈 Progreso y Entrenamiento
-
-| POST | `/practica/iniciar` | Inicia sesión de grabación |- `GET /plan/actual` - **Plan semanal personalizado** basado en debilidades
-
-| POST | `/practica/finalizar` | Procesa video (análisis completo) |- `GET /progreso/resumen` - Resumen de progreso con tendencias temporales
-
+|--------|----------|-------------|
+| POST | `/practica/iniciar` | Inicia sesión de grabación |
+| POST | `/practica/finalizar` | Procesa video (análisis completo) |
 | GET | `/practica/{id}/analisis` | Análisis detallado + comentario IA |
+| GET | `/practica/historial` | Lista todas las prácticas |
 
-| GET | `/practica/historial` | Lista todas las prácticas |### 🏆 Recompensas
-
-- `GET /recompensas/insignias` - Lista de 23 insignias obtenidas
-
-### Progreso- `GET /recompensas/racha` - Racha actual del usuario
+### 📈 Progreso y Planes de Entrenamiento
 
 | Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/plan/actual` | **Plan semanal personalizado** basado en debilidades |
+| GET | `/plan/historial` | **Historial completo de planes** generados |
+| POST | `/plan/tarea/completar` | **Marca tarea como completada** (body: `{planId, dia}`) |
+| GET | `/progreso/resumen` | Tendencias y resumen de evolución |
 
-|--------|----------|-------------|### ⚙️ Administración
+**Sistema de Planes Semanales:**
+- ✅ Generación automática cada 7 días basada en métricas reales
+- ✅ Persistencia en base de datos con tracking de estado
+- ✅ 7 tareas personalizadas por semana (sin duplicados)
+- ✅ Seguimiento de completitud de cada tarea por día
+- ✅ Historial completo de planes anteriores
 
-| GET | `/plan/actual` | Plan semanal personalizado |- `POST /admin/limpiar-bd` - Limpia toda la base de datos (⚠️ solo desarrollo)
+### 🏆 Recompensas
 
-| GET | `/progreso/resumen` | Tendencias y resumen |- `GET /health` - Health check del sistema
-
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
 | GET | `/recompensas/insignias` | Insignias obtenidas (23 tipos) |
+| GET | `/recompensas/racha` | Racha de días consecutivos |
+
+### ⚙️ Administración
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/admin/limpiar-bd` | Limpia BD completa (⚠️ solo desarrollo) |
+| GET | `/health` | Health check del sistema |
 
 | GET | `/recompensas/racha` | Racha de días consecutivos |## 📊 Métricas Implementadas
 
@@ -230,21 +242,26 @@ El script incluye limpieza de BD al final (opcional).
 
 proyecto-grupal-sw1/
 
-├── backend/### Base de Datos (PostgreSQL)
-
-│   ├── main.py              # API completa (1200+ líneas)- **usuarios**: Gestión de cuentas
-
-│   ├── services/- **practicas**: Historial completo con métricas JSON
-
-│   │   ├── audio_analyzer.py- **insignias**: Sistema de logros dinámico
-
-│   │   ├── video_analyzer.py- **rachas**: Tracking de constancia
-
+├── backend/
+│   ├── main.py              # API completa (1400+ líneas)
+│   ├── services/
+│   │   ├── audio_analyzer.py
+│   │   ├── video_analyzer.py
 │   │   └── av_processor.py
-
-│   ├── Dockerfile## 🧪 Testing
-
+│   ├── Dockerfile
 │   └── requirements.txt
+
+### Base de Datos (PostgreSQL)
+
+**Tablas implementadas:**
+- **usuarios**: Gestión de cuentas con autenticación
+- **practicas**: Historial completo con métricas JSON serializadas
+- **planes**: Planes semanales personalizados (nuevos cada 7 días)
+- **tareas_plan**: Estado de completitud de cada tarea por día
+- **insignias**: Sistema de logros dinámico (23 tipos)
+- **rachas**: Tracking de constancia y días consecutivos
+
+## 🧪 Testing
 
 ├── infra/caddy/### Script de Prueba Completo
 
