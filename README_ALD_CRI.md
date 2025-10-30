@@ -251,3 +251,4 @@ Este documento está dirigido a Aldair y Chris, responsables del desarrollo del 
 ## 7. Notas y Buenas Prácticas
 - Todos los endpoints (excepto registro/login/health) requieren JWT en el header.
 - La generación del plan es automática al consultar `/plan/actual` y se regenera cada 7 días.
+- Hay un endpoint para limpiar (vaciar) la Base de Datos
