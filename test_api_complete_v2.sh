@@ -46,14 +46,14 @@ if [[ $BASE_URL == *"https"* ]]; then
     RANDOM_USER="test_$(date +%s)"
     curl -s -X POST "$BASE_URL/auth/registrar" \
         -H "Content-Type: application/json" \
-        -d "{\"email\": \"${RANDOM_USER}@test.com\", \"password\": \"test123\", \"nombre\": \"Usuario Test\"}" | python3 -m json.tool
+        -d "{\"correo\": \"${RANDOM_USER}@test.com\", \"contrasena\": \"test123\"}" | python3 -m json.tool
     echo ""
     
     # Login y obtener token
     echo -e "${BLUE}2b. Obteniendo token JWT...${NC}"
     TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" \
         -H "Content-Type: application/json" \
-        -d "{\"email\": \"${RANDOM_USER}@test.com\", \"password\": \"test123\"}" | \
+        -d "{\"correo\": \"${RANDOM_USER}@test.com\", \"contrasena\": \"test123\"}" | \
         python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('access_token', ''))")
     
     if [ -z "$TOKEN" ]; then
