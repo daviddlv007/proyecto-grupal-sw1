@@ -702,10 +702,32 @@ def _actualizar_recompensas(user_id: int, practice_id: int, db: Session):
         crear_insignia("📚 Verboso efectivo", "Más de 200 palabras en una práctica")
     
     # === RACHA ===
+    # Lógica de negocio: Racha = días CONSECUTIVOS con al menos 1 práctica
+    # No es cantidad de prácticas, sino días seguidos practicando
     racha = db.query(RachaDB).filter(RachaDB.user_id == user_id).first()
     if racha:
-        # Actualizar racha (simplificado: cada práctica suma 1)
-        racha.racha_actual = total_practicas
+        # Obtener todas las prácticas del usuario
+        todas_practicas = db.query(PracticaDB).filter(
+            PracticaDB.user_id == user_id
+        ).order_by(PracticaDB.fecha.desc()).all()
+        
+        # Extraer fechas únicas (días en que practicó)
+        fechas_unicas = set(p.fecha.date() for p in todas_practicas)
+        fechas_ordenadas = sorted(fechas_unicas, reverse=True)
+        
+        # Calcular días consecutivos desde hoy hacia atrás
+        from datetime import timedelta
+        racha_dias = 0
+        fecha_esperada = datetime.utcnow().date()
+        
+        for fecha_practica in fechas_ordenadas:
+            if fecha_practica == fecha_esperada:
+                racha_dias += 1
+                fecha_esperada -= timedelta(days=1)
+            else:
+                break  # Se rompió la racha consecutiva
+        
+        racha.racha_actual = racha_dias
         racha.ultima_practica = datetime.utcnow()
     
     # Insignias por racha
@@ -718,7 +740,14 @@ def _actualizar_recompensas(user_id: int, practice_id: int, db: Session):
     db.commit()
 
 def _calcular_tendencias(user_id: int, db: Session) -> Tendencias:
-    """Calcula tendencias reales basadas en las prácticas almacenadas"""
+    """
+    Calcula tendencias reales basadas en las prácticas almacenadas
+    
+    LÓGICA DE NEGOCIO:
+    - Compara últimas N prácticas vs N prácticas previas
+    - Para entrenamiento, "últimas 3 sesiones" es más intuitivo que "segunda mitad"
+    - Si hay menos de 6 prácticas, compara última vs resto (mejor que nada)
+    """
     practicas = db.query(PracticaDB).filter(
         PracticaDB.user_id == user_id
     ).order_by(PracticaDB.fecha).all()
@@ -731,11 +760,27 @@ def _calcular_tendencias(user_id: int, db: Session) -> Tendencias:
             velocidad={"promedio_antes": 0, "promedio_ahora": 0, "cambio": 0}
         )
     
-    # Dividir en dos mitades: primera mitad = "antes", segunda mitad = "ahora"
+    # Ventana de comparación: últimas N sesiones
+    VENTANA = 3
     total = len(practicas)
-    mitad = max(1, total // 2)
-    practicas_antes = practicas[:mitad]
-    practicas_ahora = practicas[mitad:]
+    
+    if total < 2:
+        # Con 1 práctica no hay tendencia
+        return Tendencias(
+            muletillas={"promedio_antes": 0, "promedio_ahora": 0, "cambio": 0},
+            contacto_visual={"promedio_antes": 0, "promedio_ahora": 0, "cambio": 0},
+            expresividad={"promedio_antes": 0, "promedio_ahora": 0, "cambio": 0},
+            velocidad={"promedio_antes": 0, "promedio_ahora": 0, "cambio": 0}
+        )
+    elif total < 2 * VENTANA:
+        # Pocas prácticas: comparar últimas vs primeras
+        mitad = max(1, total // 2)
+        practicas_antes = practicas[:mitad]
+        practicas_ahora = practicas[mitad:]
+    else:
+        # Suficientes prácticas: últimas VENTANA vs VENTANA previas
+        practicas_ahora = practicas[-VENTANA:]
+        practicas_antes = practicas[-2*VENTANA:-VENTANA]
     
     # Convertir a métricas
     def obtener_metricas(practicas_list):
