@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: practica_postgres
+    environment:
+      - POSTGRES_USER=practica_user
+      - POSTGRES_PASSWORD=practica_pass
+      - POSTGRES_DB=practica_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - api-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U practica_user -d practica_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: ./backend
@@ -12,12 +31,20 @@ services:
       - JWT_SECRET_KEY=dev-secret-key-change-in-production
       - JWT_ALGORITHM=HS256
       - JWT_EXPIRE_HOURS=24
+      - DATABASE_URL=postgresql://practica_user:practica_pass@db:5432/practica_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-OPENAI_API_KEY_PLACEHOLDER}
     volumes:
       - ./backend:/app
       - /app/__pycache__
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - api-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
 
 networks:
   api-network:

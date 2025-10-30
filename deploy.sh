@@ -51,28 +51,38 @@ ssh root@165.22.47.1 << 'EOF'
     echo "⏹️ Deteniendo contenedores actuales..."
     docker compose -f docker-compose.caddy.yml down || true
     
-    echo "🧹 Limpiando imágenes antiguas..."
+    echo "🧹 Limpiando imágenes antiguas (conservando volúmenes de BD)..."
     docker system prune -f || true
     
-    echo "🏗️ Construyendo y ejecutando..."
+    echo "📝 Configurando variables de entorno..."
     export DOMAIN=softwaredlv.duckdns.org
+    
+    echo "🏗️ Construyendo y ejecutando contenedores..."
     docker compose -f docker-compose.caddy.yml up -d --build
     
     echo "🔍 Verificando deployment..."
-    sleep 10
+    sleep 15
+    
+    echo "📊 Estado de contenedores:"
+    docker compose -f docker-compose.caddy.yml ps
     
     if docker compose -f docker-compose.caddy.yml ps | grep -q "Up"; then
         echo "✅ Contenedores funcionando!"
         
         # Verificar API
+        echo "🧪 Probando endpoint de salud..."
         if curl -f -s https://softwaredlv.duckdns.org/health > /dev/null; then
             echo "✅ API respondiendo correctamente!"
+            echo "📊 Respuesta completa:"
+            curl -s https://softwaredlv.duckdns.org/health | jq . || curl -s https://softwaredlv.duckdns.org/health
         else
             echo "⚠️ API aún iniciando, dale unos segundos más..."
+            echo "📋 Logs del backend:"
+            docker compose -f docker-compose.caddy.yml logs --tail=30 backend
         fi
     else
         echo "❌ Error en deployment"
-        docker compose -f docker-compose.caddy.yml logs --tail=20
+        docker compose -f docker-compose.caddy.yml logs --tail=50
         exit 1
     fi
     

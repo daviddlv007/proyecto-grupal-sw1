@@ -1,7 +1,41 @@
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: practica_postgres_prod
+    environment:
+      POSTGRES_USER: practica_user
+      POSTGRES_PASSWORD: practica_secure_password_2025
+      POSTGRES_DB: practica_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U practica_user -d practica_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend FastAPI
+  backend:
+    build: ./backend
+    container_name: practica_backend_prod
+    expose:
+      - "8000"
+    environment:
+      - SECRET_KEY=tu-secret-key-super-segura-para-produccion-2025
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://practica_user:practica_secure_password_2025@postgres:5432/practica_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Caddy como reverse proxy con SSL automático
   caddy:
     image: caddy:2.7-alpine
+    container_name: practica_caddy_prod
     ports:
       - "80:80"
       - "443:443"
@@ -15,18 +49,7 @@ services:
       - backend
     restart: unless-stopped
 
-  # Tu backend FastAPI
-  backend:
-    build: ./backend
-    expose:
-      - "8000"
-    environment:
-      - SECRET_KEY=tu-secret-key-super-segura-para-produccion-2025
-      - ENVIRONMENT=production
-    restart: unless-stopped
-    volumes:
-      - ./backend:/app
-
 volumes:
+  postgres_data:
   caddy_data:
   caddy_config:
