@@ -21,10 +21,10 @@ VIDEO_MALO="https://bwduexqzhjolwfxupvco.supabase.co/storage/v1/object/public/im
 
 # Seleccionar ambiente (EDITABLE)
 # OPCIÓN 1: Desarrollo local
-BASE_URL="http://localhost:8000"
+# BASE_URL="http://localhost:8000"
 
 # OPCIÓN 2: Producción
-# BASE_URL="https://softwaredlv.duckdns.org"
+BASE_URL="https://softwaredlv.duckdns.org"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
