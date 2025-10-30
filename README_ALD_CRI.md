@@ -1,6 +1,6 @@
 # Guía para Desarrolladores Frontend
 
-Este documento está dirigido a Aldair y Chris, responsables del desarrollo del frontend. Aquí encontrarán una descripción clara de los casos de uso, flujos, ejemplos de request/response y recomendaciones para integrar el frontend con el backend.
+Este documento está dirigido a Aldair y Cristhian, responsables del desarrollo del frontend. Aquí encontrarán una descripción clara de los casos de uso, flujos, ejemplos de request/response y recomendaciones para integrar el frontend con el backend.
 
 ---
 
@@ -252,3 +252,4 @@ Este documento está dirigido a Aldair y Chris, responsables del desarrollo del 
 - Todos los endpoints (excepto registro/login/health) requieren JWT en el header.
 - La generación del plan es automática al consultar `/plan/actual` y se regenera cada 7 días.
 - Hay un endpoint para limpiar (vaciar) la Base de Datos
+- La Funcionalidad de análisis de vídeo está desarrollada para analizar vídeos con orientación vertical, es decir,  grabados con una cámara de móvil, también puede funcionar con vídeos horizontales, pero no hay una garantía de que todas las métricas devuelvan valores coherentes.
