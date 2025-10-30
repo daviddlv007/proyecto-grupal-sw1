@@ -105,6 +105,11 @@ class AVProcessor:
         """
         Calcula puntuación general basada en métricas
         Returns: "verde" | "amarillo" | "rojo"
+        
+        LÓGICA DE NEGOCIO:
+        - Postura mala es un factor crítico que NO permite verde
+        - Se necesita al menos 70% del score Y postura buena/regular para verde
+        - Cualquier métrica muy baja fuerza amarillo o rojo
         """
         score = 0
         max_score = 5
@@ -144,11 +149,31 @@ class AVProcessor:
         elif velocidad in ["lenta", "rápida"]:
             score += 0.5
         
-        # Clasificar
+        # Calcular porcentaje base
         percentage = (score / max_score) * 100
         
-        if percentage >= 70:
+        # ⚠️ CONSISTENCIA SEMÁNTICA: Postura mala es factor limitante
+        # No se puede obtener verde con postura mala, sin importar otras métricas
+        # Esta es una regla de negocio que garantiza coherencia
+        
+        # Obtener postura desde main.py (clasificada en finalizar_practica)
+        # Como no tenemos acceso directo aquí, usamos alineación de hombros
+        alineacion_hombros = video_metrics.get("alineacion_hombros_promedio", 0)
+        
+        # Clasificar postura igual que en main.py
+        if alineacion_hombros < 0.015:
+            postura = "buena"
+        elif alineacion_hombros < 0.03:
+            postura = "regular"
+        else:
+            postura = "mala"
+        
+        # Aplicar lógica de negocio coherente
+        if percentage >= 70 and postura in ["buena", "regular"]:
             return "verde"
+        elif percentage >= 70 and postura == "mala":
+            # Degrada a amarillo si tiene postura mala
+            return "amarillo"
         elif percentage >= 40:
             return "amarillo"
         else:
