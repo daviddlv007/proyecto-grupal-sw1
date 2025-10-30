@@ -27,6 +27,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - ENVIRONMENT=development
       - ENV=development
       - JWT_SECRET_KEY=dev-secret-key-change-in-production
       - JWT_ALGORITHM=HS256

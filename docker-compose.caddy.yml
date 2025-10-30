@@ -25,6 +25,9 @@ services:
     environment:
       - SECRET_KEY=tu-secret-key-super-segura-para-produccion-2025
       - ENVIRONMENT=production
+      - JWT_SECRET_KEY=practica-oral-jwt-secret-prod-2025-ultra-secure
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRE_HOURS=24
       - DATABASE_URL=postgresql://practica_user:practica_secure_password_2025@postgres:5432/practica_db
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     depends_on:

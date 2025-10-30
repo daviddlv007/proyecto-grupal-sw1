@@ -26,9 +26,11 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# 🔧 MODO DESARROLLO: Deshabilitar autenticación para pruebas
-# Cambiar a True para deshabilitar autenticación temporalmente
-DISABLE_AUTH = True  # ⚠️ Cambiar a False en producción
+# 🔧 Control de autenticación según entorno
+# En desarrollo: autenticación deshabilitada
+# En producción: autenticación habilitada
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+DISABLE_AUTH = ENVIRONMENT == "development"  # False en producción, True en desarrollo
 
 # Modelos de base de datos (SQLAlchemy)
 class UsuarioDB(Base):

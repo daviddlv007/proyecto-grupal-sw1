@@ -1,19 +1,32 @@
 #!/bin/bash
 
-# Script de prueba completa de la API
-# Demuestra el flujo completo del usuario
+# ═══════════════════════════════════════════════════════════════
+# 🎤 SCRIPT DE PRUEBA COMPLETA - API PRÁCTICA ORAL
+# ═══════════════════════════════════════════════════════════════
+# 
+# CONFIGURACIÓN: Comenta/Descomenta la URL que deseas usar
+# ───────────────────────────────────────────────────────────────
 
-echo "========================================="
-echo "🎤 PRUEBA COMPLETA DE API PRÁCTICA ORAL"
-echo "========================================="
-echo ""
-
+# OPCIÓN 1: Desarrollo local
 BASE_URL="http://localhost:8000"
+
+# OPCIÓN 2: Producción (descomenta la siguiente línea para usar)
+# BASE_URL="https://softwaredlv.duckdns.org"
+
+# ───────────────────────────────────────────────────────────────
+
+echo "═══════════════════════════════════════════════════════════"
+echo "🎤 PRUEBA COMPLETA DE API PRÁCTICA ORAL"
+echo "═══════════════════════════════════════════════════════════"
+echo "🌐 URL Base: $BASE_URL"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
 
 # Colores
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # 1. Health check
@@ -65,13 +78,27 @@ echo -e "${BLUE}9. Consultando racha actual...${NC}"
 curl -s $BASE_URL/recompensas/racha | python3 -m json.tool
 echo ""
 
-echo -e "${GREEN}=========================================${NC}"
+# 10. Limpieza de base de datos (opcional)
+echo -e "${YELLOW}10. ¿Deseas limpiar la base de datos? (s/n)${NC}"
+read -p "Respuesta: " LIMPIAR
+
+if [ "$LIMPIAR" = "s" ] || [ "$LIMPIAR" = "S" ]; then
+    echo -e "${BLUE}Limpiando base de datos...${NC}"
+    RESULTADO=$(curl -s -X POST $BASE_URL/admin/limpiar-bd)
+    echo "$RESULTADO" | python3 -m json.tool
+    echo -e "${GREEN}✅ Base de datos limpiada exitosamente${NC}"
+else
+    echo -e "${YELLOW}⏭️  Limpieza de BD omitida${NC}"
+fi
+echo ""
+
+echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}✅ PRUEBA COMPLETA FINALIZADA${NC}"
-echo -e "${GREEN}=========================================${NC}"
+echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo ""
-echo "Para ver la documentación Swagger:"
-echo "  👉 http://localhost:8000/docs"
+echo "📚 Documentación Swagger:"
+echo "  👉 $BASE_URL/docs"
 echo ""
-echo "Para acceder a la API:"
-echo "  👉 http://localhost:8000"
+echo "🌐 API Base:"
+echo "  👉 $BASE_URL"
 echo ""
